@@ -23,7 +23,7 @@ export async function PUT(req: NextRequest) {
     if (!body.content) {
       return NextResponse.json({ error: "Missing content" }, { status: 400 });
     }
-    const ok = writeContent();
+    const ok = writeContent(body.content);
     if (!ok) {
       return NextResponse.json({ error: "Failed to save" }, { status: 500 });
     }
