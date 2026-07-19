@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
-import { content } from "@/lib/content";
+import { getContent } from "@/lib/data";
 import { SafeScene } from "@/components/3d/SafeScene";
 import { Reveal, SectionHeading } from "@/components/Reveal";
 import { MagneticButton } from "@/components/MagneticButton";
 
 export const dynamic = "force-dynamic";
+
+const content = getContent();
 
 export const metadata: Metadata = {
   title: "About",

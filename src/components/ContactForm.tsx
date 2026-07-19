@@ -3,23 +3,10 @@
 import { useState } from "react";
 import { MagneticButton } from "./MagneticButton";
 
-const PROJECT_TYPES = [
-  "Brand Campaign",
-  "Digital Marketing",
-  "Creative Direction",
-  "Social Media",
-  "Content Creation",
-  "Something else",
-];
-
-const BUDGETS = ["< $2k", "$2k – $5k", "$5k – $10k", "$10k+"];
-
 export function ContactForm() {
   const [form, setForm] = useState({
     name: "",
     email: "",
-    projectType: PROJECT_TYPES[0],
-    budget: BUDGETS[1],
     message: "",
   });
   const [status, setStatus] = useState<"idle" | "sending" | "success" | "error">(
@@ -48,8 +35,6 @@ export function ContactForm() {
       setForm({
         name: "",
         email: "",
-        projectType: PROJECT_TYPES[0],
-        budget: BUDGETS[1],
         message: "",
       });
     } catch (err) {
@@ -103,31 +88,6 @@ export function ContactForm() {
           className="input"
         />
       </Field>
-
-      <div className="grid gap-6 sm:grid-cols-2">
-        <Field label="Project type">
-          <select
-            value={form.projectType}
-            onChange={(e) => update("projectType", e.target.value)}
-            className="input"
-          >
-            {PROJECT_TYPES.map((t) => (
-              <option key={t}>{t}</option>
-            ))}
-          </select>
-        </Field>
-        <Field label="Budget">
-          <select
-            value={form.budget}
-            onChange={(e) => update("budget", e.target.value)}
-            className="input"
-          >
-            {BUDGETS.map((b) => (
-              <option key={b}>{b}</option>
-            ))}
-          </select>
-        </Field>
-      </div>
 
       <Field label="Message">
         <textarea

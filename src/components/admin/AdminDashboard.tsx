@@ -154,50 +154,171 @@ function OverviewTab() {
 }
 
 function ContentTab() {
-  const [bio, setBio] = useState(
-    "I'm Divya — a creative director and digital marketer who believes the best brands aren't built in boardrooms, they're built in moments."
-  );
-  const [philosophy, setPhilosophy] = useState("I believe in marketing that feels human.");
+  const [data, setData] = useState<Record<string, unknown> | null>(null);
+  const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    fetch("/api/content", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.content) setData(d.content as Record<string, unknown>);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const setPath = (path: string[], value: unknown) => {
+    setData((prev) => {
+      const next = prev ? structuredClone(prev) : {};
+      let cursor: Record<string, unknown> = next;
+      for (let i = 0; i < path.length - 1; i++) {
+        const key = path[i];
+        if (typeof cursor[key] !== "object" || cursor[key] === null) {
+          cursor[key] = {};
+        }
+        cursor = cursor[key] as Record<string, unknown>;
+      }
+      cursor[path[path.length - 1]] = value;
+      return next;
+    });
+    setSaved(false);
+  };
 
   const save = async () => {
+    setError("");
     setSaved(false);
     const res = await fetch("/api/content", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        content: { about: { bio, philosophy } },
-      }),
+      body: JSON.stringify({ content: data }),
     });
-    setSaved(res.ok);
+    const json = (await res.json().catch(() => ({}))) as {
+      error?: string;
+      commitUrl?: string;
+    };
+    if (!res.ok) {
+      setError(json.error ?? "Failed to save");
+      return;
+    }
+    setSaved(true);
   };
+
+  if (loading) return <Section title="Content Editor"><p className="text-charcoal/50">Loading…</p></Section>;
+  if (!data) return <Section title="Content Editor"><p className="text-charcoal/50">Could not load content.</p></Section>;
+
+  const about = (data.about ?? {}) as Record<string, unknown>;
+  const hero = (data.hero ?? {}) as Record<string, unknown>;
+  const contact = (data.contact ?? {}) as Record<string, unknown>;
+  const personal = (about.personal ?? {}) as Record<string, unknown>;
+  const photos = Array.isArray(personal.photos) ? (personal.photos as string[]) : [];
 
   return (
     <Section title="Content Editor">
-      <label className="mb-1 block text-sm font-semibold text-charcoal">Bio</label>
-      <textarea
-        value={bio}
-        onChange={(e) => setBio(e.target.value)}
-        rows={5}
-        className="mb-4 w-full rounded-xl border border-charcoal/15 bg-white/60 p-3 outline-none focus:border-coral"
-      />
-      <label className="mb-1 block text-sm font-semibold text-charcoal">
-        Philosophy
-      </label>
-      <textarea
-        value={philosophy}
-        onChange={(e) => setPhilosophy(e.target.value)}
-        rows={2}
-        className="mb-4 w-full rounded-xl border border-charcoal/15 bg-white/60 p-3 outline-none focus:border-coral"
-      />
-      <button
-        onClick={save}
-        className="rounded-full btn-gradient px-6 py-2.5 text-sm font-semibold"
-      >
-        Save changes
-      </button>
-      {saved && <span className="ml-3 text-sm text-teal">Saved ✓</span>}
+      <p className="mb-5 text-sm text-charcoal/60">
+        Edit the live site content below. Saving commits changes to GitHub and
+        redeploys the site.
+      </p>
+
+      <h3 className="mb-3 mt-2 font-playfair text-xl font-semibold text-charcoal">Hero</h3>
+      <Editor label="Title" value={String(hero.title ?? "")} onChange={(v) => setPath(["hero", "title"], v)} />
+      <Editor label="Role" value={String(hero.role ?? "")} onChange={(v) => setPath(["hero", "role"], v)} />
+      <Editor label="Tagline" value={String(hero.tagline ?? "")} onChange={(v) => setPath(["hero", "tagline"], v)} />
+      <Editor label="Subtitle" value={String(hero.subtitle ?? "")} onChange={(v) => setPath(["hero", "subtitle"], v)} />
+
+      <h3 className="mb-3 mt-6 font-playfair text-xl font-semibold text-charcoal">About</h3>
+      <TextArea label="Headline" value={String(about.headline ?? "")} onChange={(v) => setPath(["about", "headline"], v)} />
+      <TextArea label="Bio" value={String(about.bio ?? "")} rows={5} onChange={(v) => setPath(["about", "bio"], v)} />
+      <TextArea label="Philosophy" value={String(about.philosophy ?? "")} onChange={(v) => setPath(["about", "philosophy"], v)} />
+      <TextArea label="Story" value={String(about.story ?? "")} rows={5} onChange={(v) => setPath(["about", "story"], v)} />
+      <Editor label="About image URL" value={String(about.image ?? "")} onChange={(v) => setPath(["about", "image"], v)} />
+
+      <h3 className="mb-3 mt-6 font-playfair text-xl font-semibold text-charcoal">About photos (shown on main site)</h3>
+      {photos.length === 0 && <p className="mb-3 text-sm text-charcoal/40">No photos set.</p>}
+      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {photos.map((p, i) => (
+          <div key={i} className="overflow-hidden rounded-xl border border-charcoal/10">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={p} alt={`About ${i + 1}`} className="h-32 w-full object-cover" />
+          </div>
+        ))}
+      </div>
+      {photos.map((p, i) => (
+        <Editor
+          key={i}
+          label={`Photo ${i + 1} URL`}
+          value={p}
+          onChange={(v) => {
+            const next = [...photos];
+            next[i] = v;
+            setPath(["about", "personal", "photos"], next);
+          }}
+        />
+      ))}
+
+      <h3 className="mb-3 mt-6 font-playfair text-xl font-semibold text-charcoal">Contact</h3>
+      <Editor label="Email" value={String(contact.email ?? "")} onChange={(v) => setPath(["contact", "email"], v)} />
+      <Editor label="Phone" value={String(contact.phone ?? "")} onChange={(v) => setPath(["contact", "phone"], v)} />
+      <Editor label="Location" value={String(contact.location ?? "")} onChange={(v) => setPath(["contact", "location"], v)} />
+      <TextArea label="Availability" value={String(contact.availability ?? "")} onChange={(v) => setPath(["contact", "availability"], v)} />
+
+      <div className="mt-6 flex items-center gap-3">
+        <button
+          onClick={save}
+          className="rounded-full btn-gradient px-6 py-2.5 text-sm font-semibold"
+        >
+          Save changes
+        </button>
+        {saved && <span className="text-sm text-teal">Saved &amp; committed ✓</span>}
+        {error && <span className="text-sm text-coral">{error}</span>}
+      </div>
     </Section>
+  );
+}
+
+function Editor({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <label className="mb-4 block">
+      <span className="mb-1 block text-sm font-semibold text-charcoal">{label}</span>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-xl border border-charcoal/15 bg-white/60 p-3 outline-none focus:border-coral"
+      />
+    </label>
+  );
+}
+
+function TextArea({
+  label,
+  value,
+  onChange,
+  rows = 3,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  rows?: number;
+}) {
+  return (
+    <label className="mb-4 block">
+      <span className="mb-1 block text-sm font-semibold text-charcoal">{label}</span>
+      <textarea
+        value={value}
+        rows={rows}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-xl border border-charcoal/15 bg-white/60 p-3 outline-none focus:border-coral"
+      />
+    </label>
   );
 }
 
@@ -311,10 +432,9 @@ function SubmissionsTab() {
       id: string;
       name: string;
       email: string;
-      projectType: string;
-      budget: string;
       message: string;
       createdAt: string;
+      url?: string;
     }>
   >([]);
   const [loading, setLoading] = useState(true);
@@ -360,16 +480,13 @@ function SubmissionsTab() {
                     {s.email}
                   </a>
                 </p>
-                <span className="text-xs text-charcoal/40">
+                <span className="flex items-center gap-2 text-xs text-charcoal/40">
+                  {s.url && (
+                    <a href={s.url} target="_blank" rel="noreferrer" className="text-coral underline">
+                      GitHub issue ↗
+                    </a>
+                  )}
                   {new Date(s.createdAt).toLocaleString()}
-                </span>
-              </div>
-              <div className="mt-1 flex gap-2 text-xs">
-                <span className="rounded-full bg-coral/10 px-2 py-0.5 text-coral">
-                  {s.projectType}
-                </span>
-                <span className="rounded-full bg-purple/10 px-2 py-0.5 text-purple">
-                  {s.budget}
                 </span>
               </div>
               <p className="mt-3 whitespace-pre-wrap text-sm text-charcoal/70">
@@ -398,10 +515,10 @@ function SettingsTab() {
         className="mb-4 w-full rounded-xl border border-charcoal/15 bg-white/60 p-3 outline-none focus:border-coral"
       />
       <p className="text-sm text-charcoal/60">
-        Content changes sync to this repository. Set{" "}
-        <code>GITHUB_TOKEN</code>, <code>GITHUB_REPO</code> and <code>GITHUB_BRANCH</code>{" "}
-        in your environment to enable push on save. Cloudinary credentials power image
-        uploads.
+        Content edits are committed here on save and trigger a redeploy. Contact
+        form submissions are stored as GitHub Issues in this repo. All of this is
+        wired via <code>GITHUB_TOKEN</code>, <code>GITHUB_REPO</code> and{" "}
+        <code>GITHUB_BRANCH</code>. Cloudinary powers image uploads.
       </p>
     </Section>
   );

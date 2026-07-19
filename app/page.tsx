@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { content } from "@/lib/content";
+import { getContent } from "@/lib/data";
 import { SafeScene } from "@/components/3d/SafeScene";
 import { MagneticButton } from "@/components/MagneticButton";
 import { Img } from "@/components/Img";
@@ -7,6 +7,7 @@ import { Reveal, SectionHeading } from "@/components/Reveal";
 import { TestimonialCarousel } from "@/components/TestimonialCarousel";
 
 export default function HomePage() {
+  const content = getContent();
   const { hero, portfolio, services } = content;
   const featured = (portfolio ?? []).slice(0, 3);
   const previewServices = (services ?? []).slice(0, 3);
@@ -208,7 +209,7 @@ export default function HomePage() {
           subtitle="The work matters, but the relationships matter more."
         />
         <div className="mt-12">
-          <TestimonialCarousel />
+          <TestimonialCarousel testimonials={content.testimonials} />
         </div>
       </section>
     </>

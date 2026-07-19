@@ -3,6 +3,7 @@ import type { SiteContent } from "./types";
 export const content: SiteContent = {
   nav: {
     logo: "Divya KC",
+    logoImage: "",
     links: [
       { label: "Home", href: "/" },
       { label: "About", href: "/about" },
@@ -75,6 +76,7 @@ export const content: SiteContent = {
       description:
         "I help you find the soul of your brand and translate it into visuals, words, and experiences people remember. Think of me as the director who keeps the whole story coherent and beautiful.",
       icon: "compass",
+      cover: "",
       deliverables: [
         "Brand mood boards & visual identity",
         "Campaign concept & art direction",
@@ -87,6 +89,7 @@ export const content: SiteContent = {
       description:
         "Before the pretty stuff, we need a plan. I dig into who you are, who you're for, and why you matter — then build a position that's impossible to ignore.",
       icon: "target",
+      cover: "",
       deliverables: [
         "Audience & market research",
         "Brand positioning & narrative",
@@ -99,6 +102,7 @@ export const content: SiteContent = {
       description:
         "Ideas are only magic when they reach people. I design campaigns that travel — across social, search, and screen — and actually move the numbers that matter.",
       icon: "rocket",
+      cover: "",
       deliverables: [
         "Multi-channel campaign strategy",
         "Paid & organic media plans",
@@ -111,6 +115,7 @@ export const content: SiteContent = {
       description:
         "Social isn't a megaphone, it's a conversation. I build communities around brands by showing up consistently, honestly, and with a little delight.",
       icon: "sparkles",
+      cover: "",
       deliverables: [
         "Content calendars & production",
         "Community engagement",
@@ -123,6 +128,7 @@ export const content: SiteContent = {
       description:
         "Words, images, motion — the raw material of connection. I craft content that feels less like advertising and more like something you'd actually share.",
       icon: "palette",
+      cover: "",
       deliverables: [
         "Photography & art direction",
         "Copywriting & storytelling",

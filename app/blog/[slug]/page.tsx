@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { content } from "@/lib/content";
+import { getContent } from "@/lib/data";
 import { getPost } from "@/lib/data";
 import { Reveal } from "@/components/Reveal";
 import { Img } from "@/components/Img";
@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 type Params = { slug: string };
 
 export function generateStaticParams() {
-  return (content.blog ?? []).map((p) => ({ slug: p.slug }));
+  return (getContent().blog ?? []).map((p) => ({ slug: p.slug }));
 }
 
 export async function generateMetadata({

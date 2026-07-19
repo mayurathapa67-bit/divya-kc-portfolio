@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import type { NavContent } from "@/lib/types";
 
 const FALLBACK_LINKS = [
   { label: "Home", href: "/" },
@@ -14,9 +15,9 @@ const FALLBACK_LINKS = [
   { label: "Contact", href: "/contact" },
 ];
 
-const LOGO = "Divya KC";
+type Props = { nav?: NavContent };
 
-export function Navbar() {
+export function Navbar({ nav }: Props) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -28,7 +29,9 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const links = FALLBACK_LINKS;
+  const logo = nav?.logo ?? "Divya KC";
+  const logoImage = nav?.logoImage ?? "";
+  const links = nav?.links ?? FALLBACK_LINKS;
 
   return (
     <header
@@ -40,9 +43,13 @@ export function Navbar() {
       <nav className="section-pad mx-auto flex h-20 max-w-7xl items-center justify-between">
         <Link
           href="/"
-          className="font-playfair text-2xl font-semibold tracking-tight text-charcoal"
+          className="flex items-center gap-2 font-playfair text-2xl font-semibold tracking-tight text-charcoal"
         >
-          {LOGO}
+          {logoImage ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logoImage} alt={logo} className="h-9 w-9 rounded-full object-cover" />
+          ) : null}
+          <span>{logo}</span>
         </Link>
 
         <ul className="hidden items-center gap-8 md:flex">

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { content } from "@/lib/content";
+import { getContent } from "@/lib/data";
 import { formatDate } from "@/lib/data";
 import { Reveal, SectionHeading } from "@/components/Reveal";
 import { Img } from "@/components/Img";
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 };
 
 export default function BlogPage() {
-  const posts = content.blog ?? [];
+  const posts = getContent().blog ?? [];
 
   return (
     <section className="section-pad mx-auto max-w-7xl pb-24 pt-36">

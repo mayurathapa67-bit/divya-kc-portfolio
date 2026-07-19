@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { content } from "@/lib/content";
+import { getContent } from "@/lib/data";
 
 export function Footer() {
-  const { contact, nav } = content;
+  const { contact, nav } = getContent();
 
   return (
     <footer className="relative mt-24 border-t border-charcoal/10 bg-charcoal text-ivory">

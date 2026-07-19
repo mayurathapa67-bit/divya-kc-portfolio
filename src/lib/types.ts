@@ -3,6 +3,12 @@ export type NavLink = {
   href: string;
 };
 
+export type NavContent = {
+  logo: string;
+  logoImage: string;
+  links: NavLink[];
+};
+
 export type HeroContent = {
   title: string;
   role: string;
@@ -41,6 +47,7 @@ export type ServiceItem = {
   description: string;
   icon: string;
   price?: string;
+  cover?: string;
   deliverables: string[];
 };
 
@@ -103,10 +110,7 @@ export type ContactContent = {
 };
 
 export type SiteContent = {
-  nav: {
-    logo: string;
-    links: NavLink[];
-  };
+  nav: NavContent;
   hero: HeroContent;
   about: AboutContent;
   services: ServiceItem[];

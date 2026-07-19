@@ -3,6 +3,7 @@ import { Playfair_Display, Inter, Cormorant_Garamond } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { getContent } from "@/lib/data";
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
@@ -67,7 +68,7 @@ export default function RootLayout({
       className={`${playfair.variable} ${inter.variable} ${cormorant.variable} h-full`}
     >
       <body className="min-h-full flex flex-col antialiased">
-        <Navbar />
+        <Navbar nav={getContent().nav} />
         <main className="flex-1">{children}</main>
         <Footer />
       </body>

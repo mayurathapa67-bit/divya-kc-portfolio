@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { content } from "@/lib/content";
+import { getContent } from "@/lib/data";
 import { Reveal } from "@/components/Reveal";
 import { ContactForm } from "@/components/ContactForm";
 
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default function ContactPage() {
-  const { contact } = content;
+  const { contact } = getContent();
 
   return (
     <section className="section-pad mx-auto max-w-6xl pb-24 pt-36">

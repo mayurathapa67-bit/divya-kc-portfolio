@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { content } from "@/lib/content";
+import { getContent } from "@/lib/data";
 import { Reveal, SectionHeading } from "@/components/Reveal";
 import { MagneticButton } from "@/components/MagneticButton";
 import { FaqAccordion } from "@/components/FaqAccordion";
@@ -45,6 +45,7 @@ const PROCESS = [
 ];
 
 export default function ServicesPage() {
+  const content = getContent();
   const services = content.services ?? [];
 
   return (

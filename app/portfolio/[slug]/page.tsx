@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { content } from "@/lib/content";
-import { getProject } from "@/lib/data";
+import { getProject, getContent } from "@/lib/data";
 import { ProjectHero3D } from "@/components/3d/ProjectHero3D";
 import { AnimatedCounter } from "@/components/AnimatedCounter";
 import { ImageGallery } from "@/components/ImageGallery";
@@ -39,7 +39,7 @@ export default async function ProjectDetailPage({
   const project = getProject(slug);
   if (!project) notFound();
 
-  const all = content.portfolio ?? [];
+  const all = getContent().portfolio ?? [];
   const idx = all.findIndex((p) => p.slug === slug);
   const next = all[(idx + 1) % all.length];
   const prev = all[(idx - 1 + all.length) % all.length];

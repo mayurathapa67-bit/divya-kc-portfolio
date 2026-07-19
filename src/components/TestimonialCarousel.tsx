@@ -2,21 +2,23 @@
 
 import { useMemo } from "react";
 import { SafeScene } from "./3d/SafeScene";
-import { content } from "@/lib/content";
+import type { TestimonialItem } from "@/lib/types";
 
 const ACCENTS = ["#ff6b6b", "#ffd93d", "#8b5cf6", "#6bcb77"];
 
-export function TestimonialCarousel() {
+type Props = { testimonials?: TestimonialItem[] };
+
+export function TestimonialCarousel({ testimonials = [] }: Props) {
   const items = useMemo(
     () =>
-      (content.testimonials ?? []).map((t, i) => ({
+      (testimonials ?? []).map((t, i) => ({
         quote: t.quote,
         name: t.name,
         role: t.role,
         company: t.company,
         accent: ACCENTS[i % ACCENTS.length],
       })),
-    []
+    [testimonials]
   );
 
   const fallback2D = (

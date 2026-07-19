@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { content } from "@/lib/content";
+import { getContent } from "@/lib/data";
 import { PortfolioGrid } from "@/components/PortfolioGrid";
 import { SectionHeading } from "@/components/Reveal";
 
@@ -12,6 +12,7 @@ export const metadata: Metadata = {
 };
 
 export default function PortfolioPage() {
+  const content = getContent();
   const count = (content.portfolio ?? []).length;
 
   return (
@@ -22,7 +23,7 @@ export default function PortfolioPage() {
         subtitle="A living gallery of brands I've helped dream into being. Filter by what moves you."
       />
       <div className="mt-12">
-        <PortfolioGrid />
+        <PortfolioGrid items={content.portfolio} />
       </div>
     </section>
   );

@@ -3,12 +3,13 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { content } from "@/lib/content";
+import type { PortfolioItem } from "@/lib/types";
 import { cn, PORTFOLIO_CATEGORIES } from "@/lib/utils";
 
-export function PortfolioGrid() {
+type Props = { items?: PortfolioItem[] };
+
+export function PortfolioGrid({ items = [] }: Props) {
   const [filter, setFilter] = useState<string>("All Work");
-  const items = useMemo(() => content.portfolio ?? [], []);
   const filtered = useMemo(
     () =>
       filter === "All Work"
