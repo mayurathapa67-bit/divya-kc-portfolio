@@ -203,6 +203,35 @@ function ImageField({
   value: string;
   onChange: (v: string) => void;
 }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [err, setErr] = useState("");
+
+  const upload = async (file: File) => {
+    setUploading(true);
+    setErr("");
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ file: dataUrl, folder: "divya-kc-portfolio" }),
+      });
+      const data = (await res.json()) as { url?: string; error?: string };
+      if (!res.ok || !data.url) throw new Error(data.error ?? "Upload failed");
+      onChange(data.url);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <Field label={label}>
       <input
@@ -211,6 +240,34 @@ function ImageField({
         onChange={(e) => onChange(e.target.value)}
         className="mb-2 w-full rounded-xl border border-charcoal/15 bg-white/60 p-3 outline-none focus:border-coral"
       />
+
+      <div
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => {
+          e.preventDefault();
+          const f = e.dataTransfer.files?.[0];
+          if (f) upload(f);
+        }}
+        onClick={() => inputRef.current?.click()}
+        className="mb-2 flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-charcoal/20 p-5 text-center transition-colors hover:border-coral"
+      >
+        <p className="text-2xl">🖼️</p>
+        <p className="mt-1 text-sm text-charcoal/60">
+          {uploading ? "Uploading…" : "Click or drag an image from your computer"}
+        </p>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) upload(f);
+          }}
+        />
+      </div>
+
+      {err && <p className="mb-2 text-sm text-coral">{err}</p>}
       {value ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
