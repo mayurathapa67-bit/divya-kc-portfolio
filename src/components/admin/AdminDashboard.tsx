@@ -3,16 +3,35 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
-type Tab = "overview" | "content" | "portfolio" | "blog" | "submissions" | "settings";
+type Tab =
+  | "overview"
+  | "header"
+  | "hero"
+  | "about"
+  | "services"
+  | "portfolio"
+  | "blog"
+  | "testimonials"
+  | "contact"
+  | "footer"
+  | "submissions"
+  | "settings";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "overview", label: "Overview" },
-  { id: "content", label: "Content" },
+  { id: "header", label: "Header / Nav" },
+  { id: "hero", label: "Home Hero" },
+  { id: "about", label: "About" },
+  { id: "services", label: "Services" },
   { id: "portfolio", label: "Portfolio" },
   { id: "blog", label: "Blog" },
+  { id: "testimonials", label: "Testimonials" },
+  { id: "contact", label: "Contact / Footer" },
   { id: "submissions", label: "Submissions" },
   { id: "settings", label: "Settings" },
 ];
+
+type AnyObj = Record<string, unknown>;
 
 export function AdminDashboard() {
   const router = useRouter();
@@ -87,9 +106,14 @@ export function AdminDashboard() {
 
         <main className="min-w-0 flex-1">
           {tab === "overview" && <OverviewTab />}
-          {tab === "content" && <ContentTab />}
-          {tab === "portfolio" && <PortfolioTab />}
-          {tab === "blog" && <BlogTab />}
+          {tab === "header" && <HeaderEditor />}
+          {tab === "hero" && <HeroEditor />}
+          {tab === "about" && <AboutEditor />}
+          {tab === "services" && <ServicesEditor />}
+          {tab === "portfolio" && <PortfolioEditor />}
+          {tab === "blog" && <BlogEditor />}
+          {tab === "testimonials" && <TestimonialsEditor />}
+          {tab === "contact" && <ContactEditor />}
           {tab === "submissions" && <SubmissionsTab />}
           {tab === "settings" && <SettingsTab />}
         </main>
@@ -98,16 +122,216 @@ export function AdminDashboard() {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+/* ------------------------------------------------------------------ */
+/* Reusable field primitives                                          */
+/* ------------------------------------------------------------------ */
+
+function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-3xl card-soft p-6">
-      <h2 className="mb-4 font-playfair text-2xl font-semibold text-charcoal">
+    <div className="mb-6 rounded-3xl card-soft p-6">
+      <h2 className="mb-1 font-playfair text-2xl font-semibold text-charcoal">
         {title}
       </h2>
+      {hint && <p className="mb-4 text-sm text-charcoal/50">{hint}</p>}
+      {!hint && <div className="mb-4" />}
       {children}
     </div>
   );
 }
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="mb-4 block">
+      <span className="mb-1 block text-sm font-semibold text-charcoal">{label}</span>
+      {children}
+    </label>
+  );
+}
+
+function Input({
+  label,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+}) {
+  return (
+    <Field label={label}>
+      <input
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-xl border border-charcoal/15 bg-white/60 p-3 outline-none focus:border-coral"
+      />
+    </Field>
+  );
+}
+
+function TextArea({
+  label,
+  value,
+  onChange,
+  rows = 3,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  rows?: number;
+}) {
+  return (
+    <Field label={label}>
+      <textarea
+        value={value}
+        rows={rows}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-xl border border-charcoal/15 bg-white/60 p-3 outline-none focus:border-coral"
+      />
+    </Field>
+  );
+}
+
+function ImageField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <Field label={label}>
+      <input
+        value={value}
+        placeholder="https://… or /images/…"
+        onChange={(e) => onChange(e.target.value)}
+        className="mb-2 w-full rounded-xl border border-charcoal/15 bg-white/60 p-3 outline-none focus:border-coral"
+      />
+      {value ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={value}
+          alt={label}
+          className="max-h-40 rounded-lg border border-charcoal/10 object-contain"
+        />
+      ) : (
+        <p className="text-xs text-charcoal/40">No image set.</p>
+      )}
+    </Field>
+  );
+}
+
+function StringListField({
+  label,
+  items,
+  onChange,
+}: {
+  label: string;
+  items: string[];
+  onChange: (items: string[]) => void;
+}) {
+  const update = (i: number, v: string) => {
+    const next = [...items];
+    next[i] = v;
+    onChange(next);
+  };
+  return (
+    <Field label={label}>
+      {items.map((it, i) => (
+        <div key={i} className="mb-2 flex gap-2">
+          <input
+            value={it}
+            onChange={(e) => update(i, e.target.value)}
+            className="flex-1 rounded-xl border border-charcoal/15 bg-white/60 p-2.5 outline-none focus:border-coral"
+          />
+          <button
+            type="button"
+            onClick={() => onChange(items.filter((_, j) => j !== i))}
+            className="rounded-xl border border-charcoal/15 px-3 text-coral hover:border-coral"
+          >
+            ✕
+          </button>
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={() => onChange([...items, ""])}
+        className="mt-1 rounded-full border border-charcoal/15 px-4 py-1.5 text-sm font-medium text-charcoal hover:border-coral"
+      >
+        + Add
+      </button>
+    </Field>
+  );
+}
+
+/* A card with a title bar used to group one list item (project, post, etc.) */
+function ItemCard({
+  title,
+  onRemove,
+  children,
+}: {
+  title: string;
+  onRemove?: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="mb-4 rounded-2xl border border-charcoal/10 bg-white/40 p-5">
+      <div className="mb-3 flex items-center justify-between">
+        <p className="font-playfair text-lg font-semibold text-charcoal">{title}</p>
+        {onRemove && (
+          <button
+            type="button"
+            onClick={onRemove}
+            className="rounded-full border border-coral/30 px-3 py-1 text-xs font-medium text-coral hover:border-coral"
+          >
+            Remove
+          </button>
+        )}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Save hook — commits the whole content object to GitHub             */
+/* ------------------------------------------------------------------ */
+
+function useSave() {
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const save = async (content: AnyObj) => {
+    setSaving(true);
+    setError("");
+    setSaved(false);
+    const res = await fetch("/api/content", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content }),
+    });
+    const json = (await res.json().catch(() => ({}))) as {
+      error?: string;
+    };
+    setSaving(false);
+    if (!res.ok) {
+      setError(json.error ?? "Failed to save");
+      return;
+    }
+    setSaved(true);
+  };
+
+  return { saved, error, saving, save };
+}
+
+/* ------------------------------------------------------------------ */
+/* Overview                                                           */
+/* ------------------------------------------------------------------ */
 
 function OverviewTab() {
   const [counts, setCounts] = useState({ submissions: 0, portfolio: 0, blog: 0 });
@@ -132,8 +356,9 @@ function OverviewTab() {
     <div className="space-y-6">
       <Section title="Welcome back, Divya">
         <p className="text-charcoal/60">
-          Your portfolio is live and looking beautiful. Manage your content, review
-          enquiries, and keep the magic growing.
+          Your portfolio is live. Use the tabs on the left to edit every part of
+          the site — header, home hero, about, services, portfolio, blog,
+          testimonials and contact. Changes commit to GitHub and redeploy.
         </p>
       </Section>
       <div className="grid gap-4 sm:grid-cols-3">
@@ -153,278 +378,579 @@ function OverviewTab() {
   );
 }
 
-function ContentTab() {
-  const [data, setData] = useState<Record<string, unknown> | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState("");
+/* ------------------------------------------------------------------ */
+/* Header / Nav                                                       */
+/* ------------------------------------------------------------------ */
+
+function HeaderEditor() {
+  const { saved, error, saving, save } = useSave();
+  const [data, setData] = useState<AnyObj | null>(null);
 
   useEffect(() => {
-    fetch("/api/content", { cache: "no-store" })
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.content) setData(d.content as Record<string, unknown>);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+    load(setData);
   }, []);
 
-  const setPath = (path: string[], value: unknown) => {
-    setData((prev) => {
-      const next = prev ? structuredClone(prev) : {};
-      let cursor: Record<string, unknown> = next;
-      for (let i = 0; i < path.length - 1; i++) {
-        const key = path[i];
-        if (typeof cursor[key] !== "object" || cursor[key] === null) {
-          cursor[key] = {};
-        }
-        cursor = cursor[key] as Record<string, unknown>;
-      }
-      cursor[path[path.length - 1]] = value;
-      return next;
-    });
-    setSaved(false);
+  if (!data) return <Section title="Header / Navigation"><p className="text-charcoal/50">Loading…</p></Section>;
+
+  const nav = (data.nav ?? {}) as AnyObj;
+  const links = Array.isArray(nav.links) ? (nav.links as AnyObj[]) : [];
+
+  const setNav = (patch: AnyObj) => setData({ ...data, nav: { ...nav, ...patch } });
+  const setLink = (i: number, patch: AnyObj) => {
+    const next = links.map((l, j) => (j === i ? { ...l, ...patch } : l));
+    setNav({ links: next });
   };
-
-  const save = async () => {
-    setError("");
-    setSaved(false);
-    const res = await fetch("/api/content", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content: data }),
-    });
-    const json = (await res.json().catch(() => ({}))) as {
-      error?: string;
-      commitUrl?: string;
-    };
-    if (!res.ok) {
-      setError(json.error ?? "Failed to save");
-      return;
-    }
-    setSaved(true);
-  };
-
-  if (loading) return <Section title="Content Editor"><p className="text-charcoal/50">Loading…</p></Section>;
-  if (!data) return <Section title="Content Editor"><p className="text-charcoal/50">Could not load content.</p></Section>;
-
-  const about = (data.about ?? {}) as Record<string, unknown>;
-  const hero = (data.hero ?? {}) as Record<string, unknown>;
-  const contact = (data.contact ?? {}) as Record<string, unknown>;
-  const personal = (about.personal ?? {}) as Record<string, unknown>;
-  const photos = Array.isArray(personal.photos) ? (personal.photos as string[]) : [];
 
   return (
-    <Section title="Content Editor">
-      <p className="mb-5 text-sm text-charcoal/60">
-        Edit the live site content below. Saving commits changes to GitHub and
-        redeploys the site.
-      </p>
+    <Section title="Header / Navigation" hint="Edit the logo and the menu links shown across the whole site.">
+      <Input label="Logo text" value={String(nav.logo ?? "")} onChange={(v) => setNav({ logo: v })} />
+      <ImageField label="Logo image (optional URL)" value={String(nav.logoImage ?? "")} onChange={(v) => setNav({ logoImage: v })} />
 
-      <h3 className="mb-3 mt-2 font-playfair text-xl font-semibold text-charcoal">Hero</h3>
-      <Editor label="Title" value={String(hero.title ?? "")} onChange={(v) => setPath(["hero", "title"], v)} />
-      <Editor label="Role" value={String(hero.role ?? "")} onChange={(v) => setPath(["hero", "role"], v)} />
-      <Editor label="Tagline" value={String(hero.tagline ?? "")} onChange={(v) => setPath(["hero", "tagline"], v)} />
-      <Editor label="Subtitle" value={String(hero.subtitle ?? "")} onChange={(v) => setPath(["hero", "subtitle"], v)} />
+      <p className="mb-2 text-sm font-semibold text-charcoal">Menu links</p>
+      {links.map((l, i) => (
+        <div key={i} className="mb-2 flex gap-2">
+          <input
+            value={String(l.label ?? "")}
+            placeholder="Label"
+            onChange={(e) => setLink(i, { label: e.target.value })}
+            className="flex-1 rounded-xl border border-charcoal/15 bg-white/60 p-2.5 outline-none focus:border-coral"
+          />
+          <input
+            value={String(l.href ?? "")}
+            placeholder="/path"
+            onChange={(e) => setLink(i, { href: e.target.value })}
+            className="flex-1 rounded-xl border border-charcoal/15 bg-white/60 p-2.5 outline-none focus:border-coral"
+          />
+          <button
+            type="button"
+            onClick={() => setNav({ links: links.filter((_, j) => j !== i) })}
+            className="rounded-xl border border-charcoal/15 px-3 text-coral hover:border-coral"
+          >
+            ✕
+          </button>
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={() => setNav({ links: [...links, { label: "New", href: "/" }] })}
+        className="mb-4 rounded-full border border-charcoal/15 px-4 py-1.5 text-sm font-medium text-charcoal hover:border-coral"
+      >
+        + Add link
+      </button>
 
-      <h3 className="mb-3 mt-6 font-playfair text-xl font-semibold text-charcoal">About</h3>
-      <TextArea label="Headline" value={String(about.headline ?? "")} onChange={(v) => setPath(["about", "headline"], v)} />
-      <TextArea label="Bio" value={String(about.bio ?? "")} rows={5} onChange={(v) => setPath(["about", "bio"], v)} />
-      <TextArea label="Philosophy" value={String(about.philosophy ?? "")} onChange={(v) => setPath(["about", "philosophy"], v)} />
-      <TextArea label="Story" value={String(about.story ?? "")} rows={5} onChange={(v) => setPath(["about", "story"], v)} />
-      <Editor label="About image URL" value={String(about.image ?? "")} onChange={(v) => setPath(["about", "image"], v)} />
+      <SaveBar saved={saved} error={error} saving={saving} onSave={() => save(data)} />
+    </Section>
+  );
+}
 
-      <h3 className="mb-3 mt-6 font-playfair text-xl font-semibold text-charcoal">About photos (shown on main site)</h3>
-      {photos.length === 0 && <p className="mb-3 text-sm text-charcoal/40">No photos set.</p>}
-      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {photos.map((p, i) => (
-          <div key={i} className="overflow-hidden rounded-xl border border-charcoal/10">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={p} alt={`About ${i + 1}`} className="h-32 w-full object-cover" />
-          </div>
-        ))}
-      </div>
+/* ------------------------------------------------------------------ */
+/* Hero (home)                                                        */
+/* ------------------------------------------------------------------ */
+
+function HeroEditor() {
+  const { saved, error, saving, save } = useSave();
+  const [data, setData] = useState<AnyObj | null>(null);
+  useEffect(() => { load(setData); }, []);
+  if (!data) return <Section title="Home Hero"><p className="text-charcoal/50">Loading…</p></Section>;
+
+  const hero = (data.hero ?? {}) as AnyObj;
+  const setHero = (patch: AnyObj) => setData({ ...data, hero: { ...hero, ...patch } });
+
+  return (
+    <Section title="Home Hero" hint="The first thing visitors see on the homepage.">
+      <Input label="Title (name)" value={String(hero.title ?? "")} onChange={(v) => setHero({ title: v })} />
+      <Input label="Role" value={String(hero.role ?? "")} onChange={(v) => setHero({ role: v })} />
+      <Input label="Tagline (big headline)" value={String(hero.tagline ?? "")} onChange={(v) => setHero({ tagline: v })} />
+      <TextArea label="Subtitle" value={String(hero.subtitle ?? "")} onChange={(v) => setHero({ subtitle: v })} rows={2} />
+      <Input label="Primary button text" value={String(hero.cta_primary ?? "")} onChange={(v) => setHero({ cta_primary: v })} />
+      <Input label="Secondary button text" value={String(hero.cta_secondary ?? "")} onChange={(v) => setHero({ cta_secondary: v })} />
+      <ImageField label="Hero image" value={String(hero.image ?? "")} onChange={(v) => setHero({ image: v })} />
+      <SaveBar saved={saved} error={error} saving={saving} onSave={() => save(data)} />
+    </Section>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* About                                                             */
+/* ------------------------------------------------------------------ */
+
+function AboutEditor() {
+  const { saved, error, saving, save } = useSave();
+  const [data, setData] = useState<AnyObj | null>(null);
+  useEffect(() => { load(setData); }, []);
+  if (!data) return <Section title="About"><p className="text-charcoal/50">Loading…</p></Section>;
+
+  const about = (data.about ?? {}) as AnyObj;
+  const setAbout = (patch: AnyObj) => setData({ ...data, about: { ...about, ...patch } });
+  const personal = (about.personal ?? {}) as AnyObj;
+  const photos = Array.isArray(personal.photos) ? (personal.photos as string[]) : [];
+  const expertise = Array.isArray(about.expertise) ? (about.expertise as string[]) : [];
+  const experience = Array.isArray(about.experience) ? (about.experience as AnyObj[]) : [];
+
+  const setPersonal = (patch: AnyObj) =>
+    setAbout({ personal: { ...personal, ...patch } });
+
+  return (
+    <Section title="About" hint="Edit the About page and the about preview on the homepage. Photos below appear on the site.">
+      <Input label="Headline" value={String(about.headline ?? "")} onChange={(v) => setAbout({ headline: v })} />
+      <TextArea label="Bio" value={String(about.bio ?? "")} onChange={(v) => setAbout({ bio: v })} rows={5} />
+      <TextArea label="Philosophy" value={String(about.philosophy ?? "")} onChange={(v) => setAbout({ philosophy: v })} />
+      <TextArea label="Story" value={String(about.story ?? "")} onChange={(v) => setAbout({ story: v })} rows={5} />
+      <ImageField label="About page image" value={String(about.image ?? "")} onChange={(v) => setAbout({ image: v })} />
+
+      <h3 className="mb-2 mt-4 font-playfair text-xl font-semibold text-charcoal">Photos (shown on site)</h3>
       {photos.map((p, i) => (
-        <Editor
-          key={i}
-          label={`Photo ${i + 1} URL`}
-          value={p}
-          onChange={(v) => {
+        <div key={i} className="mb-3">
+          <ImageField label={`Photo ${i + 1}`} value={p} onChange={(v) => {
             const next = [...photos];
             next[i] = v;
-            setPath(["about", "personal", "photos"], next);
-          }}
-        />
-      ))}
-
-      <h3 className="mb-3 mt-6 font-playfair text-xl font-semibold text-charcoal">Contact</h3>
-      <Editor label="Email" value={String(contact.email ?? "")} onChange={(v) => setPath(["contact", "email"], v)} />
-      <Editor label="Phone" value={String(contact.phone ?? "")} onChange={(v) => setPath(["contact", "phone"], v)} />
-      <Editor label="Location" value={String(contact.location ?? "")} onChange={(v) => setPath(["contact", "location"], v)} />
-      <TextArea label="Availability" value={String(contact.availability ?? "")} onChange={(v) => setPath(["contact", "availability"], v)} />
-
-      <div className="mt-6 flex items-center gap-3">
-        <button
-          onClick={save}
-          className="rounded-full btn-gradient px-6 py-2.5 text-sm font-semibold"
-        >
-          Save changes
-        </button>
-        {saved && <span className="text-sm text-teal">Saved &amp; committed ✓</span>}
-        {error && <span className="text-sm text-coral">{error}</span>}
-      </div>
-    </Section>
-  );
-}
-
-function Editor({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <label className="mb-4 block">
-      <span className="mb-1 block text-sm font-semibold text-charcoal">{label}</span>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-xl border border-charcoal/15 bg-white/60 p-3 outline-none focus:border-coral"
-      />
-    </label>
-  );
-}
-
-function TextArea({
-  label,
-  value,
-  onChange,
-  rows = 3,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  rows?: number;
-}) {
-  return (
-    <label className="mb-4 block">
-      <span className="mb-1 block text-sm font-semibold text-charcoal">{label}</span>
-      <textarea
-        value={value}
-        rows={rows}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-xl border border-charcoal/15 bg-white/60 p-3 outline-none focus:border-coral"
-      />
-    </label>
-  );
-}
-
-function PortfolioTab() {
-  return (
-    <Section title="Portfolio Manager">
-      <p className="mb-4 text-charcoal/60">
-        Add or edit projects. Upload images to Cloudinary and they&apos;ll appear in your
-        gallery. Changes commit via GitHub sync.
-      </p>
-      <Uploader />
-      <div className="mt-4 rounded-xl border border-dashed border-charcoal/20 p-6 text-sm text-charcoal/50">
-        Project list editing is powered by the GitHub-backed content store. Use the
-        uploader above to add imagery, then update <code>src/lib/content.ts</code> or
-        connect the GitHub API in Settings.
-      </div>
-    </Section>
-  );
-}
-
-function BlogTab() {
-  return (
-    <Section title="Blog Manager">
-      <p className="mb-4 text-charcoal/60">
-        Draft and publish articles. Use the uploader to add featured images.
-      </p>
-      <Uploader />
-      <div className="mt-4 rounded-xl border border-dashed border-charcoal/20 p-6 text-sm text-charcoal/50">
-        Blog posts are managed through the GitHub-backed content store. Add a new entry
-        in <code>src/lib/content.ts</code> or wire the GitHub API in Settings.
-      </div>
-    </Section>
-  );
-}
-
-function Uploader() {
-  const [url, setUrl] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const onFile = async (file: File) => {
-    setLoading(true);
-    setError("");
-    try {
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ file: dataUrl, folder: "divya-kc-portfolio" }),
-      });
-      const data = (await res.json()) as { url?: string; error?: string };
-      if (!res.ok || !data.url) throw new Error(data.error ?? "Upload failed");
-      setUrl(data.url);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="rounded-2xl border border-charcoal/10 bg-white/50 p-5">
-      <p className="mb-3 text-sm font-semibold text-charcoal">Image upload (Cloudinary)</p>
-      <div
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={(e) => {
-          e.preventDefault();
-          const f = e.dataTransfer.files?.[0];
-          if (f) onFile(f);
-        }}
-        className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-charcoal/20 p-8 text-center"
-        onClick={() => inputRef.current?.click()}
-      >
-        <p className="text-3xl">🖼️</p>
-        <p className="mt-2 text-sm text-charcoal/60">
-          Drag &amp; drop an image, or click to browse
-        </p>
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) onFile(f);
-          }}
-        />
-      </div>
-      {loading && <p className="mt-3 text-sm text-charcoal/50">Uploading…</p>}
-      {error && <p className="mt-3 text-sm text-coral">{error}</p>}
-      {url && (
-        <div className="mt-3">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={url} alt="Uploaded" className="max-h-40 rounded-lg" />
-          <p className="mt-2 break-all text-xs text-charcoal/50">{url}</p>
+            setPersonal({ photos: next });
+          }} />
         </div>
-      )}
-    </div>
+      ))}
+      <button
+        type="button"
+        onClick={() => setPersonal({ photos: [...photos, ""] })}
+        className="mb-4 rounded-full border border-charcoal/15 px-4 py-1.5 text-sm font-medium text-charcoal hover:border-coral"
+      >
+        + Add photo
+      </button>
+
+      <StringListField label="Expertise tags" items={expertise} onChange={(v) => setAbout({ expertise: v })} />
+
+      <h3 className="mb-2 mt-4 font-playfair text-xl font-semibold text-charcoal">Experience timeline</h3>
+      {experience.map((exp, i) => (
+        <ItemCard
+          key={i}
+          title={String(exp.role ?? `Item ${i + 1}`)}
+          onRemove={() => setAbout({ experience: experience.filter((_, j) => j !== i) })}
+        >
+          <Input label="Role" value={String(exp.role ?? "")} onChange={(v) => {
+            const next = experience.map((e, j) => (j === i ? { ...e, role: v } : e));
+            setAbout({ experience: next });
+          }} />
+          <Input label="Company" value={String(exp.company ?? "")} onChange={(v) => {
+            const next = experience.map((e, j) => (j === i ? { ...e, company: v } : e));
+            setAbout({ experience: next });
+          }} />
+          <Input label="Duration" value={String(exp.duration ?? "")} onChange={(v) => {
+            const next = experience.map((e, j) => (j === i ? { ...e, duration: v } : e));
+            setAbout({ experience: next });
+          }} />
+          <TextArea label="Story" value={String(exp.story ?? "")} onChange={(v) => {
+            const next = experience.map((e, j) => (j === i ? { ...e, story: v } : e));
+            setAbout({ experience: next });
+          }} />
+        </ItemCard>
+      ))}
+      <button
+        type="button"
+        onClick={() => setAbout({ experience: [...experience, { role: "", company: "", duration: "", story: "" }] })}
+        className="mb-4 rounded-full border border-charcoal/15 px-4 py-1.5 text-sm font-medium text-charcoal hover:border-coral"
+      >
+        + Add experience
+      </button>
+
+      <SaveBar saved={saved} error={error} saving={saving} onSave={() => save(data)} />
+    </Section>
   );
 }
+
+/* ------------------------------------------------------------------ */
+/* Services                                                          */
+/* ------------------------------------------------------------------ */
+
+function ServicesEditor() {
+  const { saved, error, saving, save } = useSave();
+  const [data, setData] = useState<AnyObj | null>(null);
+  useEffect(() => { load(setData); }, []);
+  if (!data) return <Section title="Services"><p className="text-charcoal/50">Loading…</p></Section>;
+
+  const services = Array.isArray(data.services) ? (data.services as AnyObj[]) : [];
+  const setServices = (next: AnyObj[]) => setData({ ...data, services: next });
+
+  return (
+    <Section title="Services" hint="Each card on the Services page. Icon accepts: compass, target, rocket, sparkles, palette.">
+      {services.map((s, i) => (
+        <ItemCard
+          key={i}
+          title={String(s.title ?? `Service ${i + 1}`)}
+          onRemove={() => setServices(services.filter((_, j) => j !== i))}
+        >
+          <Input label="Title" value={String(s.title ?? "")} onChange={(v) => {
+            const next = services.map((x, j) => (j === i ? { ...x, title: v } : x));
+            setServices(next);
+          }} />
+          <TextArea label="Description" value={String(s.description ?? "")} onChange={(v) => {
+            const next = services.map((x, j) => (j === i ? { ...x, description: v } : x));
+            setServices(next);
+          }} />
+          <Input label="Icon key" value={String(s.icon ?? "")} onChange={(v) => {
+            const next = services.map((x, j) => (j === i ? { ...x, icon: v } : x));
+            setServices(next);
+          }} />
+          <Input label="Price (optional)" value={String(s.price ?? "")} onChange={(v) => {
+            const next = services.map((x, j) => (j === i ? { ...x, price: v } : x));
+            setServices(next);
+          }} />
+          <ImageField label="Cover image (optional)" value={String(s.cover ?? "")} onChange={(v) => {
+            const next = services.map((x, j) => (j === i ? { ...x, cover: v } : x));
+            setServices(next);
+          }} />
+          <StringListField
+            label="Deliverables"
+            items={Array.isArray(s.deliverables) ? (s.deliverables as string[]) : []}
+            onChange={(v) => {
+              const next = services.map((x, j) => (j === i ? { ...x, deliverables: v } : x));
+              setServices(next);
+            }}
+          />
+        </ItemCard>
+      ))}
+      <button
+        type="button"
+        onClick={() => setServices([...services, { title: "", description: "", icon: "sparkles", deliverables: [""] }])}
+        className="rounded-full border border-charcoal/15 px-4 py-1.5 text-sm font-medium text-charcoal hover:border-coral"
+      >
+        + Add service
+      </button>
+      <SaveBar saved={saved} error={error} saving={saving} onSave={() => save(data)} />
+    </Section>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Portfolio                                                         */
+/* ------------------------------------------------------------------ */
+
+function PortfolioEditor() {
+  const { saved, error, saving, save } = useSave();
+  const [data, setData] = useState<AnyObj | null>(null);
+  useEffect(() => { load(setData); }, []);
+  if (!data) return <Section title="Portfolio"><p className="text-charcoal/50">Loading…</p></Section>;
+
+  const portfolio = Array.isArray(data.portfolio) ? (data.portfolio as AnyObj[]) : [];
+  const setPortfolio = (next: AnyObj[]) => setData({ ...data, portfolio: next });
+
+  return (
+    <Section title="Portfolio" hint="Projects shown on the Work page and homepage. Images appear in galleries across the site.">
+      {portfolio.map((p, i) => {
+        const images = Array.isArray(p.images) ? (p.images as string[]) : [];
+        const results = (p.results ?? {}) as AnyObj;
+        const testimonial = (p.testimonial ?? {}) as AnyObj;
+        return (
+          <ItemCard
+            key={i}
+            title={String(p.title ?? `Project ${i + 1}`)}
+            onRemove={() => setPortfolio(portfolio.filter((_, j) => j !== i))}
+          >
+            <Input label="Slug (URL id, no spaces)" value={String(p.slug ?? "")} onChange={(v) => {
+              const next = portfolio.map((x, j) => (j === i ? { ...x, slug: v } : x));
+              setPortfolio(next);
+            }} />
+            <Input label="Title" value={String(p.title ?? "")} onChange={(v) => {
+              const next = portfolio.map((x, j) => (j === i ? { ...x, title: v } : x));
+              setPortfolio(next);
+            }} />
+            <Input label="Category" value={String(p.category ?? "")} onChange={(v) => {
+              const next = portfolio.map((x, j) => (j === i ? { ...x, category: v } : x));
+              setPortfolio(next);
+            }} />
+            <Input label="Client" value={String(p.client ?? "")} onChange={(v) => {
+              const next = portfolio.map((x, j) => (j === i ? { ...x, client: v } : x));
+              setPortfolio(next);
+            }} />
+            <Input label="Published date" value={String(p.published_date ?? "")} onChange={(v) => {
+              const next = portfolio.map((x, j) => (j === i ? { ...x, published_date: v } : x));
+              setPortfolio(next);
+            }} />
+            <TextArea label="Description" value={String(p.description ?? "")} onChange={(v) => {
+              const next = portfolio.map((x, j) => (j === i ? { ...x, description: v } : x));
+              setPortfolio(next);
+            }} />
+            <TextArea label="Challenge" value={String(p.challenge ?? "")} onChange={(v) => {
+              const next = portfolio.map((x, j) => (j === i ? { ...x, challenge: v } : x));
+              setPortfolio(next);
+            }} />
+            <TextArea label="Strategy" value={String(p.strategy ?? "")} onChange={(v) => {
+              const next = portfolio.map((x, j) => (j === i ? { ...x, strategy: v } : x));
+              setPortfolio(next);
+            }} />
+
+            <h4 className="mb-2 mt-2 text-sm font-semibold text-charcoal">Results</h4>
+            <Input label="Engagement" value={String(results.engagement ?? "")} onChange={(v) => {
+              const next = portfolio.map((x, j) => (j === i ? { ...x, results: { ...results, engagement: v } } : x));
+              setPortfolio(next);
+            }} />
+            <Input label="Reach" value={String(results.reach ?? "")} onChange={(v) => {
+              const next = portfolio.map((x, j) => (j === i ? { ...x, results: { ...results, reach: v } } : x));
+              setPortfolio(next);
+            }} />
+            <Input label="Conversions" value={String(results.conversions ?? "")} onChange={(v) => {
+              const next = portfolio.map((x, j) => (j === i ? { ...x, results: { ...results, conversions: v } } : x));
+              setPortfolio(next);
+            }} />
+
+            <h4 className="mb-2 mt-2 text-sm font-semibold text-charcoal">Testimonial</h4>
+            <TextArea label="Quote" value={String(testimonial.quote ?? "")} onChange={(v) => {
+              const next = portfolio.map((x, j) => (j === i ? { ...x, testimonial: { ...testimonial, quote: v } } : x));
+              setPortfolio(next);
+            }} />
+            <Input label="Name" value={String(testimonial.name ?? "")} onChange={(v) => {
+              const next = portfolio.map((x, j) => (j === i ? { ...x, testimonial: { ...testimonial, name: v } } : x));
+              setPortfolio(next);
+            }} />
+            <Input label="Role" value={String(testimonial.role ?? "")} onChange={(v) => {
+              const next = portfolio.map((x, j) => (j === i ? { ...x, testimonial: { ...testimonial, role: v } } : x));
+              setPortfolio(next);
+            }} />
+
+            <h4 className="mb-2 mt-2 text-sm font-semibold text-charcoal">Images</h4>
+            {images.map((img, k) => (
+              <div key={k} className="mb-3">
+                <ImageField label={`Image ${k + 1}`} value={img} onChange={(v) => {
+                  const ni = [...images];
+                  ni[k] = v;
+                  const next = portfolio.map((x, j) => (j === i ? { ...x, images: ni } : x));
+                  setPortfolio(next);
+                }} />
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => {
+                const next = portfolio.map((x, j) => (j === i ? { ...x, images: [...images, ""] } : x));
+                setPortfolio(next);
+              }}
+              className="mb-2 rounded-full border border-charcoal/15 px-4 py-1.5 text-sm font-medium text-charcoal hover:border-coral"
+            >
+              + Add image
+            </button>
+          </ItemCard>
+        );
+      })}
+      <button
+        type="button"
+        onClick={() => setPortfolio([...portfolio, {
+          slug: `project-${portfolio.length + 1}`,
+          title: "",
+          category: "",
+          client: "",
+          description: "",
+          challenge: "",
+          strategy: "",
+          results: { engagement: "", reach: "", conversions: "" },
+          images: [""],
+          testimonial: { quote: "", name: "", role: "" },
+          published_date: "",
+        }])}
+        className="rounded-full border border-charcoal/15 px-4 py-1.5 text-sm font-medium text-charcoal hover:border-coral"
+      >
+        + Add project
+      </button>
+      <SaveBar saved={saved} error={error} saving={saving} onSave={() => save(data)} />
+    </Section>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Blog                                                              */
+/* ------------------------------------------------------------------ */
+
+function BlogEditor() {
+  const { saved, error, saving, save } = useSave();
+  const [data, setData] = useState<AnyObj | null>(null);
+  useEffect(() => { load(setData); }, []);
+  if (!data) return <Section title="Blog"><p className="text-charcoal/50">Loading…</p></Section>;
+
+  const blog = Array.isArray(data.blog) ? (data.blog as AnyObj[]) : [];
+  const setBlog = (next: AnyObj[]) => setData({ ...data, blog: next });
+
+  return (
+    <Section title="Blog" hint="Blog posts. Content supports blank-line-separated paragraphs.">
+      {blog.map((p, i) => (
+        <ItemCard
+          key={i}
+          title={String(p.title ?? `Post ${i + 1}`)}
+          onRemove={() => setBlog(blog.filter((_, j) => j !== i))}
+        >
+          <Input label="Slug (URL id, no spaces)" value={String(p.slug ?? "")} onChange={(v) => {
+            const next = blog.map((x, j) => (j === i ? { ...x, slug: v } : x));
+            setBlog(next);
+          }} />
+          <Input label="Title" value={String(p.title ?? "")} onChange={(v) => {
+            const next = blog.map((x, j) => (j === i ? { ...x, title: v } : x));
+            setBlog(next);
+          }} />
+          <Input label="Category" value={String(p.category ?? "")} onChange={(v) => {
+            const next = blog.map((x, j) => (j === i ? { ...x, category: v } : x));
+            setBlog(next);
+          }} />
+          <Input label="Read time" value={String(p.read_time ?? "")} onChange={(v) => {
+            const next = blog.map((x, j) => (j === i ? { ...x, read_time: v } : x));
+            setBlog(next);
+          }} />
+          <Input label="Published date" value={String(p.published_date ?? "")} onChange={(v) => {
+            const next = blog.map((x, j) => (j === i ? { ...x, published_date: v } : x));
+            setBlog(next);
+          }} />
+          <TextArea label="Excerpt" value={String(p.excerpt ?? "")} onChange={(v) => {
+            const next = blog.map((x, j) => (j === i ? { ...x, excerpt: v } : x));
+            setBlog(next);
+          }} />
+          <TextArea label="Content (separate paragraphs with a blank line)" value={String(p.content ?? "")} onChange={(v) => {
+            const next = blog.map((x, j) => (j === i ? { ...x, content: v } : x));
+            setBlog(next);
+          }} rows={6} />
+          <ImageField label="Featured image" value={String(p.featured_image ?? "")} onChange={(v) => {
+            const next = blog.map((x, j) => (j === i ? { ...x, featured_image: v } : x));
+            setBlog(next);
+          }} />
+        </ItemCard>
+      ))}
+      <button
+        type="button"
+        onClick={() => setBlog([...blog, {
+          slug: `post-${blog.length + 1}`,
+          title: "",
+          excerpt: "",
+          content: "",
+          category: "",
+          featured_image: "",
+          published_date: "",
+          read_time: "5 min read",
+        }])}
+        className="rounded-full border border-charcoal/15 px-4 py-1.5 text-sm font-medium text-charcoal hover:border-coral"
+      >
+        + Add post
+      </button>
+      <SaveBar saved={saved} error={error} saving={saving} onSave={() => save(data)} />
+    </Section>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Testimonials                                                      */
+/* ------------------------------------------------------------------ */
+
+function TestimonialsEditor() {
+  const { saved, error, saving, save } = useSave();
+  const [data, setData] = useState<AnyObj | null>(null);
+  useEffect(() => { load(setData); }, []);
+  if (!data) return <Section title="Testimonials"><p className="text-charcoal/50">Loading…</p></Section>;
+
+  const testimonials = Array.isArray(data.testimonials) ? (data.testimonials as AnyObj[]) : [];
+  const setTestimonials = (next: AnyObj[]) => setData({ ...data, testimonials: next });
+
+  return (
+    <Section title="Testimonials" hint="Client quotes shown on the homepage.">
+      {testimonials.map((t, i) => (
+        <ItemCard
+          key={i}
+          title={String(t.name ?? `Testimonial ${i + 1}`)}
+          onRemove={() => setTestimonials(testimonials.filter((_, j) => j !== i))}
+        >
+          <TextArea label="Quote" value={String(t.quote ?? "")} onChange={(v) => {
+            const next = testimonials.map((x, j) => (j === i ? { ...x, quote: v } : x));
+            setTestimonials(next);
+          }} />
+          <Input label="Name" value={String(t.name ?? "")} onChange={(v) => {
+            const next = testimonials.map((x, j) => (j === i ? { ...x, name: v } : x));
+            setTestimonials(next);
+          }} />
+          <Input label="Role" value={String(t.role ?? "")} onChange={(v) => {
+            const next = testimonials.map((x, j) => (j === i ? { ...x, role: v } : x));
+            setTestimonials(next);
+          }} />
+          <Input label="Company" value={String(t.company ?? "")} onChange={(v) => {
+            const next = testimonials.map((x, j) => (j === i ? { ...x, company: v } : x));
+            setTestimonials(next);
+          }} />
+          <ImageField label="Avatar image" value={String(t.avatar ?? "")} onChange={(v) => {
+            const next = testimonials.map((x, j) => (j === i ? { ...x, avatar: v } : x));
+            setTestimonials(next);
+          }} />
+        </ItemCard>
+      ))}
+      <button
+        type="button"
+        onClick={() => setTestimonials([...testimonials, { quote: "", name: "", role: "", company: "", avatar: "" }])}
+        className="rounded-full border border-charcoal/15 px-4 py-1.5 text-sm font-medium text-charcoal hover:border-coral"
+      >
+        + Add testimonial
+      </button>
+      <SaveBar saved={saved} error={error} saving={saving} onSave={() => save(data)} />
+    </Section>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Contact / Footer                                                  */
+/* ------------------------------------------------------------------ */
+
+function ContactEditor() {
+  const { saved, error, saving, save } = useSave();
+  const [data, setData] = useState<AnyObj | null>(null);
+  useEffect(() => { load(setData); }, []);
+  if (!data) return <Section title="Contact / Footer"><p className="text-charcoal/50">Loading…</p></Section>;
+
+  const contact = (data.contact ?? {}) as AnyObj;
+  const setContact = (patch: AnyObj) => setData({ ...data, contact: { ...contact, ...patch } });
+  const socials = Array.isArray(contact.socials) ? (contact.socials as AnyObj[]) : [];
+
+  return (
+    <Section title="Contact & Footer" hint="Contact details, social links and footer info used across the site.">
+      <Input label="Email" value={String(contact.email ?? "")} onChange={(v) => setContact({ email: v })} />
+      <Input label="Phone" value={String(contact.phone ?? "")} onChange={(v) => setContact({ phone: v })} />
+      <Input label="Location" value={String(contact.location ?? "")} onChange={(v) => setContact({ location: v })} />
+      <TextArea label="Availability" value={String(contact.availability ?? "")} onChange={(v) => setContact({ availability: v })} />
+
+      <h3 className="mb-2 mt-4 font-playfair text-xl font-semibold text-charcoal">Social links</h3>
+      {socials.map((s, i) => (
+        <div key={i} className="mb-2 flex gap-2">
+          <input
+            value={String(s.platform ?? "")}
+            placeholder="Platform"
+            onChange={(e) => {
+              const next = socials.map((x, j) => (j === i ? { ...x, platform: e.target.value } : x));
+              setContact({ socials: next });
+            }}
+            className="flex-1 rounded-xl border border-charcoal/15 bg-white/60 p-2.5 outline-none focus:border-coral"
+          />
+          <input
+            value={String(s.url ?? "")}
+            placeholder="https://…"
+            onChange={(e) => {
+              const next = socials.map((x, j) => (j === i ? { ...x, url: e.target.value } : x));
+              setContact({ socials: next });
+            }}
+            className="flex-1 rounded-xl border border-charcoal/15 bg-white/60 p-2.5 outline-none focus:border-coral"
+          />
+          <button
+            type="button"
+            onClick={() => setContact({ socials: socials.filter((_, j) => j !== i) })}
+            className="rounded-xl border border-charcoal/15 px-3 text-coral hover:border-coral"
+          >
+            ✕
+          </button>
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={() => setContact({ socials: [...socials, { platform: "", url: "" }] })}
+        className="mb-4 rounded-full border border-charcoal/15 px-4 py-1.5 text-sm font-medium text-charcoal hover:border-coral"
+      >
+        + Add social
+      </button>
+
+      <SaveBar saved={saved} error={error} saving={saving} onSave={() => save(data)} />
+    </Section>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Submissions                                                       */
+/* ------------------------------------------------------------------ */
 
 function SubmissionsTab() {
   const [subs, setSubs] = useState<
@@ -500,6 +1026,10 @@ function SubmissionsTab() {
   );
 }
 
+/* ------------------------------------------------------------------ */
+/* Settings                                                          */
+/* ------------------------------------------------------------------ */
+
 function SettingsTab() {
   const [repo, setRepo] = useState(
     process.env.NEXT_PUBLIC_GITHUB_REPO ?? "mayurathapa67-bit/divya-kc-portfolio"
@@ -522,4 +1052,47 @@ function SettingsTab() {
       </p>
     </Section>
   );
+}
+
+/* ------------------------------------------------------------------ */
+/* Save bar                                                          */
+/* ------------------------------------------------------------------ */
+
+function SaveBar({
+  saved,
+  error,
+  saving,
+  onSave,
+}: {
+  saved: boolean;
+  error: string;
+  saving: boolean;
+  onSave: () => void;
+}) {
+  return (
+    <div className="mt-4 flex items-center gap-3">
+      <button
+        onClick={onSave}
+        disabled={saving}
+        className="rounded-full btn-gradient px-6 py-2.5 text-sm font-semibold disabled:opacity-60"
+      >
+        {saving ? "Saving…" : "Save changes"}
+      </button>
+      {saved && <span className="text-sm text-teal">Saved &amp; committed ✓</span>}
+      {error && <span className="text-sm text-coral">{error}</span>}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Shared loader                                                     */
+/* ------------------------------------------------------------------ */
+
+function load(setter: (v: AnyObj) => void) {
+  fetch("/api/content", { cache: "no-store" })
+    .then((r) => r.json())
+    .then((d) => {
+      if (d.content) setter(d.content as AnyObj);
+    })
+    .catch(() => undefined);
 }

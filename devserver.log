@@ -1,0 +1,20 @@
+
+> divya-kc-portfolio@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.10 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.1.78:3000
+- Environments: .env.local
+✓ Ready in 1460ms
+- Experiments (use with caution):
+  · optimizePackageImports
+
+ GET /api/content 401 in 2.2s (next.js: 2.1s, application-code: 58ms)
+ POST /api/auth 200 in 214ms (next.js: 187ms, application-code: 27ms)
+ GET /api/content 200 in 25ms (next.js: 8ms, application-code: 17ms)
+ GET /api/content 401 in 12ms (next.js: 4ms, application-code: 8ms)
+ PUT /api/content 401 in 16ms (next.js: 7ms, application-code: 9ms)
+ POST /api/auth 200 in 13ms (next.js: 4ms, application-code: 9ms)
+ GET /api/content 200 in 19ms (next.js: 5ms, application-code: 14ms)
+ PUT /api/content 200 in 2.2s (next.js: 8ms, application-code: 2.2s)
